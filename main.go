@@ -35,7 +35,7 @@ func getMess(id int) string {
 		str2 := "Вежливость: " + cell2 + "\n"
 		cell3 := xlsx.GetCellValue(sheet, "D"+strconv.Itoa(line_number[id]))
 		str3 := "Интеллект: " + cell3
-		return "***Твои показетели***\n" + str1 + str2 + str3
+		return str1 + str2 + str3
 	} else {
 		return "Тебя нет в списке, чувак"
 	}
@@ -52,10 +52,10 @@ func main() {
 			log.Println("Smth went wrong: ", err.Error())
 		}
 		for _, update := range updates {
-			err = respond(botUrl, update)
+			respond(botUrl, update)
 			offset = update.UpdateId + 1
 		}
-		fmt.Println(updates)
+		//fmt.Println(updates)
 	}
 }
 
