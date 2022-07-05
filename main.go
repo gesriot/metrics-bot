@@ -10,11 +10,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
-func getMess(id int) string {
+func getMessage(id int) string {
 	xlsx, err := excelize.OpenFile("./stat.xlsx")
 	if err != nil {
 		fmt.Println(err)
@@ -23,22 +25,35 @@ func getMess(id int) string {
 	sheet := "Лист1"
 
 	line_number := map[int]int{
-		111111: 2, // Иванов
-		392676: 3, // Сидоров
-		242422: 4, // Смирнов
+		26078024: 2, // Иванов
+		10359264: 3, // Сидоров
+		30962007: 4, // Смирнов
 	}
 
+	metric := [3]string{"Продажи: ", "Вежливость: ", "Интеллект: "}
+
+	var metric_plus_cell [3]string
+	var cell [3]string
+	column_letter := [3]string{"B", "C", "D"}
+
 	if line_number[id] != 0 {
-		cell1 := xlsx.GetCellValue(sheet, "B"+strconv.Itoa(line_number[id]))
-		str1 := "Продажи: " + cell1 + "\n"
-		cell2 := xlsx.GetCellValue(sheet, "C"+strconv.Itoa(line_number[id]))
-		str2 := "Вежливость: " + cell2 + "\n"
-		cell3 := xlsx.GetCellValue(sheet, "D"+strconv.Itoa(line_number[id]))
-		str3 := "Интеллект: " + cell3
-		return str1 + str2 + str3
+		for i := 0; i < 3; i++ {
+			cell[i] = xlsx.GetCellValue(sheet, column_letter[i]+strconv.Itoa(line_number[id]))
+
+			if cell[i] == "" {
+				metric_plus_cell[i] = metric[i] + cell[i] + "–\n\n"
+			} else {
+				if s, err := strconv.ParseFloat(cell[i], 32); err == nil {
+					cell[i] = fmt.Sprintf("%g", round(s, 2))
+				}
+				metric_plus_cell[i] = metric[i] + cell[i] + "\n\n"
+			}
+		}
+		return strings.Join(metric_plus_cell[:], "")
 	} else {
 		return "Тебя нет в списке, чувак"
 	}
+
 }
 
 func main() {
@@ -55,7 +70,6 @@ func main() {
 			respond(botUrl, update)
 			offset = update.UpdateId + 1
 		}
-		//fmt.Println(updates)
 	}
 }
 
@@ -85,7 +99,7 @@ func respond(botUrl string, update Update) error {
 	var botMessage BotMessage
 	botMessage.ChatId = update.Message.Chat.ChatId
 	//что будем слать
-	botMessage.Text = getMess(update.Message.FromUser.Id)
+	botMessage.Text = getMessage(update.Message.FromUser.Id)
 
 	// запаковываем сообщение в формат json
 	buf, err := json.Marshal(botMessage)
@@ -99,4 +113,9 @@ func respond(botUrl string, update Update) error {
 		return err
 	}
 	return nil
+}
+
+func round(number float64, presision int) float64 {
+	exp10 := math.Pow10(presision)
+	return math.Round(number*exp10) / exp10
 }
